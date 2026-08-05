@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: match-service
+  namespace: tictactoe
+  labels:
+    app: match-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: match-service
+  template:
+    metadata:
+      labels:
+        app: match-service
+    spec:
+      containers:
+        - name: match-service
+          image: raiden004/tictactoe-match-service:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PORT
+              value: "5000"
+            - name: GAME_SERVICE_URL
+              value: "http://game-service:5001"
+            - name: PLAYER_SERVICE_URL
+              value: "http://player-service:5002"
+          readinessProbe:
+            httpGet: { path: /health, port: 5000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 5000 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 250m, memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: match-service
+  namespace: tictactoe
+spec:
+  selector:
+    app: match-service
+  ports:
+    - port: 5000
+      targetPort: 5000
+  type: ClusterIP

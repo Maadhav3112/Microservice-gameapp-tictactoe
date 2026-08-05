@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: player-service
+  namespace: tictactoe
+  labels:
+    app: player-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: player-service
+  template:
+    metadata:
+      labels:
+        app: player-service
+    spec:
+      containers:
+        - name: player-service
+          image: raiden004/tictactoe-player-service:latest
+          ports:
+            - containerPort: 5002
+          env:
+            - name: PORT
+              value: "5002"
+          readinessProbe:
+            httpGet: { path: /health, port: 5002 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 5002 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 250m, memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: player-service
+  namespace: tictactoe
+spec:
+  selector:
+    app: player-service
+  ports:
+    - port: 5002
+      targetPort: 5002
+  type: ClusterIP

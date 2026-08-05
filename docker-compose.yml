@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_USER: ttt_user
+      MYSQL_PASSWORD: ttt_password
+      MYSQL_DATABASE: ttt_stats
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  player-service:
+    build: ./services/player-service
+    environment:
+      PORT: 5002
+    ports:
+      - "5002:5002"
+
+  game-service:
+    build: ./services/game-service
+    environment:
+      PORT: 5001
+    ports:
+      - "5001:5001"
+
+  match-service:
+    build: ./services/match-service
+    environment:
+      PORT: 5000
+      GAME_SERVICE_URL: http://game-service:5001
+      PLAYER_SERVICE_URL: http://player-service:5002
+    ports:
+      - "5000:5000"
+    depends_on:
+      - game-service
+      - player-service
+
+  stats-service:
+    build: ./services/stats-service
+    environment:
+      PORT: 5003
+      DATABASE_URL: mysql+pymysql://ttt_user:ttt_password@mysql:3306/ttt_stats
+    ports:
+      - "5003:5003"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - player-service
+      - match-service
+      - game-service
+      - stats-service
+
+volumes:
+  mysql_data:
