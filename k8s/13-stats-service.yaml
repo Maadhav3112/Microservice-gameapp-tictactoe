@@ -23,8 +23,6 @@ spec:
           env:
             - name: PORT
               value: "5003"
-            - name: DATABASE_URL
-              value: "mysql+pymysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_HOST):3306/$(MYSQL_DATABASE)"
             - name: MYSQL_USER
               valueFrom:
                 secretKeyRef: { name: mysql-secret, key: mysql-user }
@@ -37,6 +35,8 @@ spec:
             - name: MYSQL_DATABASE
               valueFrom:
                 secretKeyRef: { name: mysql-secret, key: mysql-database }
+            - name: DATABASE_URL
+              value: "mysql+pymysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_HOST):3306/$(MYSQL_DATABASE)"
           readinessProbe:
             httpGet: { path: /health, port: 5003 }
             initialDelaySeconds: 10
