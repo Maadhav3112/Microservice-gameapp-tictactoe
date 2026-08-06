@@ -53,7 +53,7 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
-  ingressClassName: nginx
+  ingressClassName: alb
   rules:
     - host: tictactoe.local  # replace with your real domain
       http:
