@@ -4,6 +4,7 @@ metadata:
   name: mysql-pvc
   namespace: tictactoe
 spec:
+  storageClassName: gp2
   accessModes: ["ReadWriteOnce"]
   resources:
     requests:
@@ -19,7 +20,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate  # a single MySQL volume can't be mounted by 2 pods at once
+    type: Recreate
   selector:
     matchLabels:
       app: mysql
@@ -34,6 +35,8 @@ spec:
           ports:
             - containerPort: 3306
           env:
+            - name: MYSQL_RANDOM_ROOT_PASSWORD
+              value: "yes"
             - name: MYSQL_USER
               valueFrom:
                 secretKeyRef: { name: mysql-secret, key: mysql-user }
@@ -70,17 +73,4 @@ spec:
   ports:
     - port: 3306
       targetPort: 3306
-  clusterIP: None 
-
---- 
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mysql-pvc
-  namespace: tictactoe
-spec:
-  storageClassName: gp2
-  accessModes: ["ReadWriteOnce"]
-  resources:
-    requests:
-      storage: 2Gi# headless service, standard practice for a single stateful DB pod
+  clusterIP: None
