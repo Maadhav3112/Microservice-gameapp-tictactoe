@@ -70,4 +70,17 @@ spec:
   ports:
     - port: 3306
       targetPort: 3306
-  clusterIP: None  # headless service, standard practice for a single stateful DB pod
+  clusterIP: None 
+
+--- 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  namespace: tictactoe
+spec:
+  storageClassName: gp2
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi# headless service, standard practice for a single stateful DB pod
