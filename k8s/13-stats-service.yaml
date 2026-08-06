@@ -20,34 +20,38 @@ spec:
           image: raiden004/tictactoe-stats-service:latest
           ports:
             - containerPort: 5003
+
           env:
             - name: PORT
               value: "5003"
-            - name: MYSQL_USER
-              valueFrom:
-                secretKeyRef: { name: mysql-secret, key: mysql-user }
-            - name: MYSQL_PASSWORD
-              valueFrom:
-                secretKeyRef: { name: mysql-secret, key: mysql-password }
-            - name: MYSQL_HOST
-              valueFrom:
-                secretKeyRef: { name: mysql-secret, key: mysql-host }
-            - name: MYSQL_DATABASE
-              valueFrom:
-                secretKeyRef: { name: mysql-secret, key: mysql-database }
+
             - name: DATABASE_URL
-              value: "mysql+pymysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_HOST):3306/$(MYSQL_DATABASE)"
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: DATABASE_URL
+
           readinessProbe:
-            httpGet: { path: /health, port: 5003 }
+            httpGet:
+              path: /health
+              port: 5003
             initialDelaySeconds: 10
             periodSeconds: 10
+
           livenessProbe:
-            httpGet: { path: /health, port: 5003 }
+            httpGet:
+              path: /health
+              port: 5003
             initialDelaySeconds: 15
             periodSeconds: 20
+
           resources:
-            requests: { cpu: 100m, memory: 128Mi }
-            limits: { cpu: 250m, memory: 256Mi }
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
 ---
 apiVersion: v1
 kind: Service
