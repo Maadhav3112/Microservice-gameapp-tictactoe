@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: stats-service
-          image: raiden004/tictactoe-stats-service:latest
+          image: raiden004/tictactoe-stats-service:v2
           ports:
             - containerPort: 5003
 
