@@ -24,13 +24,16 @@ spec:
             - name: PORT
               value: "5003"
             - name: DATABASE_URL
-              value: "mysql+pymysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@mysql:3306/$(MYSQL_DATABASE)"
+              value: "mysql+pymysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_HOST):3306/$(MYSQL_DATABASE)"
             - name: MYSQL_USER
               valueFrom:
                 secretKeyRef: { name: mysql-secret, key: mysql-user }
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef: { name: mysql-secret, key: mysql-password }
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef: { name: mysql-secret, key: mysql-host }
             - name: MYSQL_DATABASE
               valueFrom:
                 secretKeyRef: { name: mysql-secret, key: mysql-database }
