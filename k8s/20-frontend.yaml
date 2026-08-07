@@ -43,7 +43,7 @@ spec:
   ports:
     - port: 80
       targetPort: 80
-  type: LoadBalancer
+  type: ClusterIP
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -53,9 +53,9 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
-  ingressClassName: alb
+  ingressClassName: nginx
   rules:
-    - host: tictactoe.local  # replace with your real domain
+    - host: tictactoe.local
       http:
         paths:
           - path: /
@@ -65,3 +65,4 @@ spec:
                 name: frontend
                 port:
                   number: 80
+EOF
