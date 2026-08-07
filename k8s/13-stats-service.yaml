@@ -30,6 +30,16 @@ spec:
                 secretKeyRef:
                   name: mysql-secret
                   key: DATABASE_URL
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-username
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-password
 
           readinessProbe:
             httpGet:
