@@ -20,41 +20,26 @@ spec:
           image: raiden004/tictactoe-stats-service:v2
           ports:
             - containerPort: 5003
-
           env:
             - name: PORT
               value: "5003"
-
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
                   key: DATABASE_URL
-            - name: MYSQL_USER
-              valueFrom:
-                secretKeyRef:
-                  name: mysql-secret
-                  key: mysql-username
-            - name: MYSQL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysql-secret
-                  key: mysql-password
-
           readinessProbe:
             httpGet:
               path: /health
               port: 5003
             initialDelaySeconds: 10
             periodSeconds: 10
-
           livenessProbe:
             httpGet:
               path: /health
               port: 5003
             initialDelaySeconds: 15
             periodSeconds: 20
-
           resources:
             requests:
               cpu: 100m
