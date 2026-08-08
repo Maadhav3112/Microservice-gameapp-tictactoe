@@ -56,10 +56,26 @@ export default function Board({ playerX, playerO, onGameOver }) {
         setReported(true);
         const payload =
           outcome === "draw"
-            ? { draw: true, players: [{ player_id: playerX.id }, { player_id: playerO.id }] }
+            ? {
+                draw: true,
+                players: [
+                  { player_id: playerX.id, username: playerX.username },
+                  { player_id: playerO.id, username: playerO.username },
+                ],
+              }
             : outcome === "X"
-            ? { winner_id: playerX.id, loser_id: playerO.id }
-            : { winner_id: playerO.id, loser_id: playerX.id };
+            ? {
+                winner_id: playerX.id,
+                winner_username: playerX.username,
+                loser_id: playerO.id,
+                loser_username: playerO.username,
+              }
+            : {
+                winner_id: playerO.id,
+                winner_username: playerO.username,
+                loser_id: playerX.id,
+                loser_username: playerX.username,
+              };
 
         // Single one-off call to record the result -- not continuous
         // polling, so a brief network blip here just fails quietly and
