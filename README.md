@@ -1,187 +1,190 @@
-# Tic-Tac-Toe Online — Microservices Demo
+# GitOps Kubernetes Deployment on AWS EKS
 
-A multiplayer Tic-Tac-Toe game built as four independent Python
-microservices, a React + Tailwind frontend, Docker + Kubernetes
-deployment configs, and a Jenkins CI/CD pipeline.
+A production-style GitOps setup that deploys a **microservices-based**, real-time multiplayer web application to **Amazon EKS**, using **ArgoCD** for continuous delivery, **Docker Hub** as the container registry, and **Amazon RDS (MySQL)** for persistent stats storage.
 
-## Architecture
+This repo documents the infrastructure, deployment pipeline, and operational workflows used to run the cluster end to end — from provisioning through rollout, monitoring, and rollback.
+
+---
+
+## Architecture Overview
+
+- **Cloud provider:** AWS
+- **Kubernetes:** Amazon EKS (Auto Mode), running Kubernetes v1.36
+- **GitOps engine:** ArgoCD (v3.5.0), auto-sync enabled from a Git repository
+- **Ingress:** ingress-nginx
+- **Container registry:** Docker Hub
+- **Database:** Amazon RDS for MySQL (8.4.9)
+- **Compute:** EC2 bastion/admin host + EKS-managed worker nodes (`c7i-flex.large`)
+
+The application is split into independently deployable microservices:
+
+| Component | Purpose |
+|---|---|
+| `frontend` | Serves the web UI |
+| `game-service` | Core game/session logic |
+| `match-service` | Match orchestration |
+| `player-service` | Player identity/session handling |
+| `stats-service` | Aggregates win/loss/draw stats |
+| MySQL (RDS) | Persistent storage for player stats |
+
+Each service is independently containerized, versioned, and pushed to Docker Hub, then deployed to the cluster declaratively through ArgoCD.
+
+### Why Microservices
+
+Splitting the application into separate services (frontend, game, match, player, stats) rather than a single monolith means:
+
+- Each service has its **own Docker image, version tag, and deployment lifecycle** — one service can be updated or rolled back without touching the others.
+- Services **scale independently** — e.g. `game-service` can be scaled up under load without over-provisioning the `frontend` or `stats-service`.
+- Failures are **isolated** — an issue in one microservice doesn't take down the whole application.
+- It maps cleanly onto Kubernetes primitives: each microservice gets its own Deployment, ReplicaSet, and Service/ClusterIP, all visible as separate nodes in the ArgoCD resource tree below.
+
+---
+
+## GitOps Delivery with ArgoCD
+
+ArgoCD continuously watches the Git repository and reconciles the live cluster state against the desired state defined in manifests. Auto-sync is enabled, so any merged change to the manifests is automatically rolled out.
+
+**Applications dashboard:**
+
+![ArgoCD Applications Dashboard](images/argocd-dashboard.png)
+
+**Application resource tree** — shows the full dependency graph from Deployments → ReplicaSets → Pods, along with sync/health status and revision history per service:
+
+![ArgoCD Application Tree - Part 1](images/argocd-app-tree-1.png)
+
+![ArgoCD Application Tree - Part 2](images/argocd-app-tree-2.png)
+
+**Network view** — traces traffic flow from the ingress controller through each service to its backing pods:
+
+![ArgoCD Network View](images/argocd-network-view.png)
+
+---
+
+## Kubernetes Cluster (Amazon EKS)
+
+The cluster runs in **EKS Auto Mode**, which offloads node provisioning and lifecycle management to AWS. It is organized into two managed node pools (`system` and `general-purpose`).
+
+**Cluster summary:**
+
+![EKS Cluster](images/eks-cluster.png)
+
+**Worker nodes:**
+
+![EKS Nodes](images/eks-nodes.png)
+
+**Node capacity allocation** (CPU, memory, pods, ephemeral storage):
+
+![Node Capacity](images/eks-node-capacity.png)
+
+**Pods scheduled on a worker node:**
+
+![Pods on Node](images/eks-pods-on-node.png)
+
+**Cluster add-ons** — a `metrics-server` deployment provides resource metrics for autoscaling and observability:
+
+![Metrics Server Pods](images/eks-metrics-server-pods.png)
+
+**Namespaces** — workloads are isolated by namespace (`argocd`, `ingress-nginx`, and the application namespace, alongside the default system namespaces):
+
+![Namespaces](images/k8s-namespaces.png)
+
+---
+
+## Cluster Operations via kubectl
+
+Day-to-day operations are performed from an EC2 admin/bastion host with `kubectl` access to the cluster.
+
+**Inspecting pods and services across namespaces:**
+
+![kubectl pods and services](images/k8s-cli-pods-services.png)
+
+**Rolling restarts and rollout status** — deployments can be restarted and their rollout progress tracked in real time, enabling zero-downtime updates and rollback if a release misbehaves:
+
+![Rollout restart and status](images/k8s-rollout-restart.png)
+
+---
+
+## Identity & Access Management (AWS IAM)
+
+Access to the cluster and supporting AWS resources is controlled through dedicated IAM users with scoped permissions, separate from the account root user.
+
+**IAM users provisioned for cluster administration and secret management:**
+
+![IAM Users](images/iam-users.png)
+
+**Permissions attached to the cluster admin user:**
+
+![IAM Permissions](images/iam-permissions.png)
+
+---
+
+## Compute (EC2)
+
+Alongside the managed EKS worker nodes, an EC2 instance serves as the administration/bastion host used to run `kubectl` and manage the cluster.
+
+![EC2 Instances](images/ec2-instances.png)
+
+---
+
+## Container Images (Docker Hub)
+
+Each microservice is built into its own image and published to a private Docker Hub repository, tagged by version (`latest`, `v2`, `v2.1`, etc.) to support controlled rollouts and rollbacks.
+
+![Docker Hub Images 1](images/docker-images-1.png)
+
+![Docker Hub Images 2](images/docker-images-2.png)
+
+---
+
+## Database Layer (Amazon RDS for MySQL)
+
+Player statistics are persisted in a MySQL database hosted on Amazon RDS, decoupling stateful data from the stateless application pods.
+
+**Connecting to the RDS instance:**
+
+![MySQL Connection](images/mysql-connect.png)
+
+**Player stats table:**
+
+![Player Stats Table](images/mysql-player-stats.png)
+
+---
+
+## Application in Action
+
+The end-to-end deployment serves a live, real-time web app with player matchmaking and a persistent leaderboard backed by the database layer described above.
+
+**Lobby and leaderboard:**
+
+![App Lobby and Leaderboard](images/app-lobby-leaderboard.png)
+
+**Live session:**
+
+![App Gameplay](images/app-gameplay.png)
+
+**Match result and updated leaderboard:**
+
+![App Result](images/app-result.png)
+
+---
+
+## Key Highlights
+
+- **Declarative, Git-driven deployments** — ArgoCD keeps the cluster in sync with the Git repo automatically, giving a full audit trail of every change (author, commit, timestamp).
+- **Zero-downtime rollouts and easy rollback** — rolling deployment restarts and ArgoCD's history/rollback feature allow safe recovery from bad releases.
+- **Microservices architecture** — each service is independently built, versioned, containerized, and deployed.
+- **Managed Kubernetes with EKS Auto Mode** — reduces operational overhead of node provisioning and scaling.
+- **Least-privilege access** — dedicated IAM users/policies for cluster administration and secrets management instead of shared root credentials.
+- **Externalized, durable data layer** — application state is persisted in RDS rather than in-cluster, keeping pods stateless and easy to scale or replace.
+
+---
+
+## Repository Structure
 
 ```
-                        ┌─────────────────┐
-                        │    Frontend     │  React + Tailwind
-                        │  (Nginx :80)    │  served by Nginx, which also
-                        └────────┬────────┘  proxies /api/* to services
-                                 │
-        ┌────────────┬──────────┼───────────┬────────────┐
-        │            │          │           │            │
-   /api/player  /api/match  /api/game   /api/stats        │
-        │            │          │           │            │
-        ▼            ▼          ▼           ▼            │
-┌──────────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐
-│Player Service│ │  Match   │ │  Game    │ │ Stats Service│
-│  (Flask)     │ │ Service  │ │ Service  │ │  (Flask)     │
-│  :5002       │ │ (Flask)  │ │ (Flask)  │ │  :5003       │
-│ in-memory    │ │  :5000   │ │  :5001   │ │      │       │
-└──────────────┘ └────┬─────┘ └──────────┘ └──────┼───────┘
-                       │ creates games via              │
-                       └──────────► Game Service         ▼
-                                                    ┌──────────┐
-                                                    │  MySQL   │
-                                                    └──────────┘
+.
+├── README.md
+└── images/          # Screenshots referenced in this README
 ```
 
-| Service | Responsibility | Port | Storage |
-|---|---|---|---|
-| `player-service` | Create/lookup usernames & profiles | 5002 | in-memory (swap for a DB later) |
-| `match-service` | Queue + pair players, ask Game Service to start games | 5000 | in-memory |
-| `game-service` | Board state, move validation, win/draw detection | 5001 | in-memory |
-| `stats-service` | Win/loss/draw history + leaderboard | 5003 | **MySQL** |
-
-Each service is a small, independent Flask app with a `/health`
-endpoint, its own `requirements.txt`, `Dockerfile`, and `tests/`
-folder — so you can build, test, and deploy them separately.
-
-## Repo layout
-
-```
-services/
-  game-service/    (app.py, requirements.txt, Dockerfile, tests/)
-  player-service/  (same layout)
-  match-service/   (same layout)
-  stats-service/   (same layout, MySQL via SQLAlchemy)
-frontend/          (React + Vite + Tailwind, served by Nginx)
-k8s/               (Kubernetes manifests, apply in numeric order)
-docker-compose.yml (local dev, spins up everything + MySQL)
-Jenkinsfile        (CI/CD: checkout -> pytest -> SonarQube -> build & push)
-```
-
-## Run it locally with Docker Compose
-
-This is the fastest way to try the whole thing:
-
-```bash
-docker compose up --build
-```
-
-Then open **http://localhost:3000**. Open it in a second browser tab
-(or incognito window) to simulate a second player and get matched.
-
-Individual services are also reachable directly while developing:
-- Player service: http://localhost:5002/health
-- Match service: http://localhost:5000/health
-- Game service: http://localhost:5001/health
-- Stats service: http://localhost:5003/health
-- MySQL: localhost:3306 (user `ttt_user` / password `ttt_password` / db `ttt_stats`)
-
-## Run a single service without Docker
-
-Every service follows the same pattern:
-
-```bash
-cd services/game-service
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python app.py          # starts on the port in requirements/app.py
-```
-
-Run its tests the same way:
-
-```bash
-python -m pytest tests/ -v
-```
-
-## Frontend development
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-This starts Vite's dev server on **http://localhost:5173** and proxies
-`/api/*` calls to services running on `localhost` (see
-`vite.config.js`). Start the four backend services first (or via
-`docker compose up player-service match-service game-service
-stats-service`).
-
-## Deploying to Kubernetes
-
-1. Build and push images (or let the Jenkins pipeline do it):
-   ```bash
-   docker build -t YOUR_REGISTRY/tictactoe-game-service:latest services/game-service
-   docker push YOUR_REGISTRY/tictactoe-game-service:latest
-   # ...repeat for player-service, match-service, stats-service, frontend
-   ```
-2. Edit every `image: YOUR_REGISTRY/...` line in `k8s/*.yaml` to point
-   at your real registry.
-3. Apply the manifests in order:
-   ```bash
-   kubectl apply -f k8s/00-namespace.yaml
-   kubectl apply -f k8s/01-mysql-secret.yaml
-   kubectl apply -f k8s/02-mysql.yaml
-   kubectl apply -f k8s/10-game-service.yaml
-   kubectl apply -f k8s/11-player-service.yaml
-   kubectl apply -f k8s/12-match-service.yaml
-   kubectl apply -f k8s/13-stats-service.yaml
-   kubectl apply -f k8s/20-frontend.yaml
-   ```
-4. Check everything is healthy:
-   ```bash
-   kubectl -n tictactoe get pods
-   kubectl -n tictactoe get svc
-   ```
-5. If you have an Ingress controller (e.g. `ingress-nginx`) installed,
-   point your `/etc/hosts` (or real DNS) at your cluster's ingress IP
-   for the `tictactoe.local` host in `k8s/20-frontend.yaml`, or change
-   it to your real domain.
-
-> ⚠️ The `k8s/01-mysql-secret.yaml` file contains example base64
-> "secrets" for demo purposes only. In a real deployment, create
-> secrets out-of-band (`kubectl create secret ...`) rather than
-> committing them to source control.
-
-## CI/CD with Jenkins
-
-The included `Jenkinsfile` defines four stages:
-
-1. **Checkout** — pulls the repo.
-2. **Run Tests (pytest)** — creates a virtualenv per service and runs
-   its test suite.
-3. **SonarQube Scan** — static analysis via `sonar-scanner`, followed
-   by a Quality Gate check.
-4. **Docker Build & Push** — builds and pushes an image per service
-   (plus the frontend) to your registry, tagged with the Jenkins build
-   number and `latest`.
-
-Before running the pipeline, configure in Jenkins:
-- Credentials: `docker-registry-creds` (username/password) and a
-  SonarQube server named `MySonarQube` with a token.
-- The `SERVICES` and `REGISTRY` environment variables at the top of
-  the `Jenkinsfile` (edit `REGISTRY` to your own registry path).
-
-## How a game flows end-to-end
-
-1. Frontend calls `player-service` to create/fetch a player by
-   username.
-2. Frontend asks `match-service` to join the matchmaking queue.
-3. Once two players are queued, `match-service` calls `game-service`
-   to create a new game, and returns a `match` object (with a
-   `game_id`) to both players.
-4. The frontend polls `game-service` for board state and posts moves
-   to it.
-5. When a game finishes (win or draw), the frontend calls
-   `stats-service` to record the result, and the leaderboard refreshes.
-
-## Extending this for real production use
-
-This project is intentionally simple and beginner-friendly. Before
-running it for real users, consider:
-- Persisting `player-service`, `match-service`, and `game-service`
-  state to a real database or Redis (currently in-memory, so state is
-  lost on pod restart and won't work correctly with >1 replica per
-  service without shared storage).
-- Adding authentication (players can currently claim any username).
-- Replacing HTTP polling with WebSockets for real-time moves.
-- Adding resource-based autoscaling (`HorizontalPodAutoscaler`) in
-  Kubernetes.
-- Rotating the MySQL secret via a proper secrets manager.
+> Note: This README documents the deployed system based on cluster/dashboard screenshots. Add your Kubernetes manifests, ArgoCD `Application` definitions, and CI/CD pipeline config alongside this README as the source of truth for the GitOps workflow.
