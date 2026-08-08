@@ -1,8 +1,24 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { api } from "../api.js";
 
 const CELL_BASE =
   "flex items-center justify-center h-24 w-24 sm:h-28 sm:w-28 bg-white rounded-xl shadow-sm border border-slate-200 text-4xl font-bold transition-colors";
+
+const WIN_LINES = [
+  [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+  [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
+  [0, 4, 8], [2, 4, 6],           // diagonals
+];
+
+function calculateWinner(board) {
+  for (const [a, b, c] of WIN_LINES) {
+    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+      return board[a]; // "X" or "O"
+    }
+  }
+  if (board.every((cell) => cell !== null)) return "draw";
+  return null;
+}
 
 function Cell({ value, onClick, disabled }) {
   return (
@@ -18,111 +34,89 @@ function Cell({ value, onClick, disabled }) {
   );
 }
 
-export default function Board({ gameId, playerId, mySymbol, opponentName, onGameOver }) {
-  const [game, setGame] = useState(null);
-  const [error, setError] = useState("");
-  const pollRef = useRef(null);
-  const reportedRef = useRef(false);
+export default function Board({ playerX, playerO, onGameOver }) {
+  const [board, setBoard] = useState(Array(9).fill(null));
+  const [turn, setTurn] = useState("X");
+  const [result, setResult] = useState(null); // null | "X" | "O" | "draw"
+  const [reported, setReported] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  const currentName = turn === "X" ? playerX.username : playerO.username;
 
-    async function poll() {
-      try {
-        const g = await api.getGame(gameId);
-        if (!cancelled) {
-          setGame(g);
-          setError("");
-        }
-      } catch (e) {
-        if (!cancelled) setError(e.message);
+  const handleClick = (i) => {
+    if (result || board[i] !== null) return;
+
+    const nextBoard = board.slice();
+    nextBoard[i] = turn;
+    setBoard(nextBoard);
+
+    const outcome = calculateWinner(nextBoard);
+    if (outcome) {
+      setResult(outcome);
+      if (!reported) {
+        setReported(true);
+        const payload =
+          outcome === "draw"
+            ? { draw: true, players: [{ player_id: playerX.id }, { player_id: playerO.id }] }
+            : outcome === "X"
+            ? { winner_id: playerX.id, loser_id: playerO.id }
+            : { winner_id: playerO.id, loser_id: playerX.id };
+
+        // Single one-off call to record the result -- not continuous
+        // polling, so a brief network blip here just fails quietly and
+        // doesn't affect the game that was already played locally.
+        api.recordResult(payload).catch(() => {});
+        onGameOver?.();
       }
+      return;
     }
 
-    poll();
-    pollRef.current = setInterval(poll, 1500);
-    return () => {
-      cancelled = true;
-      clearInterval(pollRef.current);
-    };
-  }, [gameId]);
+    setTurn(turn === "X" ? "O" : "X");
+  };
 
-  useEffect(() => {
-    if (!game || reportedRef.current) return;
-    if (game.status === "in_progress") return;
-
-    reportedRef.current = true;
-    clearInterval(pollRef.current);
-
-    const xId = game.players.X;
-    const oId = game.players.O;
-
-    const payload =
-      game.status === "draw"
-        ? { draw: true, players: [{ player_id: xId }, { player_id: oId }] }
-        : game.status === "X"
-        ? { winner_id: xId, loser_id: oId }
-        : { winner_id: oId, loser_id: xId };
-
-    api.recordResult(payload).catch(() => {
-      /* stats failure shouldn't block the UI */
-    });
-
-    onGameOver?.(game);
-  }, [game, onGameOver]);
-
-  if (error) {
-    return <p className="text-rose-600">Couldn't load the game: {error}</p>;
-  }
-
-  if (!game) {
-    return <p className="text-slate-500 animate-pulse">Loading board…</p>;
-  }
-
-  const isMyTurn = game.status === "in_progress" && game.turn === mySymbol;
-
-  const handleClick = async (i) => {
-    if (!isMyTurn) return;
-    try {
-      const updated = await api.makeMove(gameId, playerId, i);
-      setGame(updated);
-    } catch (e) {
-      setError(e.message);
-      setTimeout(() => setError(""), 2000);
-    }
+  const handleRestart = () => {
+    setBoard(Array(9).fill(null));
+    setTurn("X");
+    setResult(null);
+    setReported(false);
   };
 
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="text-center">
         <p className="text-sm text-slate-500">
-          You are <span className="font-semibold">{mySymbol}</span> · Opponent:{" "}
-          <span className="font-semibold">{opponentName}</span>
+          <span className="font-semibold text-brand">{playerX.username}</span> (X) vs{" "}
+          <span className="font-semibold text-rose-500">{playerO.username}</span> (O)
         </p>
         <p className="mt-1 font-medium">
-          {game.status === "in_progress" ? (
-            isMyTurn ? (
-              <span className="text-emerald-600">Your turn</span>
-            ) : (
-              <span className="text-slate-500">Waiting for opponent…</span>
-            )
-          ) : game.status === "draw" ? (
+          {result === null ? (
+            <span className="text-slate-700">
+              <span className={turn === "X" ? "text-brand" : "text-rose-500"}>{currentName}</span>'s
+              turn ({turn})
+            </span>
+          ) : result === "draw" ? (
             <span className="text-amber-600">It's a draw!</span>
-          ) : game.status === mySymbol ? (
-            <span className="text-emerald-600">🎉 You won!</span>
           ) : (
-            <span className="text-rose-600">You lost this one.</span>
+            <span className="text-emerald-600">
+              🎉 {result === "X" ? playerX.username : playerO.username} wins!
+            </span>
           )}
         </p>
       </div>
 
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        {game.board.map((value, i) => (
-          <Cell key={i} value={value} onClick={() => handleClick(i)} disabled={!isMyTurn} />
+        {board.map((value, i) => (
+          <Cell key={i} value={value} onClick={() => handleClick(i)} disabled={result !== null} />
         ))}
       </div>
 
-      {error && <p className="text-sm text-rose-600">{error}</p>}
+      {result !== null && (
+        <button
+          onClick={handleRestart}
+          className="bg-brand hover:bg-brand-dark text-white font-semibold rounded-lg px-4 py-2 transition-colors"
+        >
+          Play again (same players)
+        </button>
+      )}
     </div>
   );
 }

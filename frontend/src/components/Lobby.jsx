@@ -1,89 +1,75 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { api } from "../api.js";
 
-export default function Lobby({ onMatched }) {
-  const [username, setUsername] = useState("");
-  const [player, setPlayer] = useState(null);
-  const [status, setStatus] = useState("idle"); // idle | joining | waiting | error
+export default function Lobby({ onStart }) {
+  const [nameX, setNameX] = useState("");
+  const [nameO, setNameO] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | starting | error
   const [error, setError] = useState("");
-  const pollRef = useRef(null);
 
-  useEffect(() => () => clearInterval(pollRef.current), []);
-
-  const handleJoin = async (e) => {
+  const handleStart = async (e) => {
     e.preventDefault();
-    if (!username.trim()) return;
+    if (!nameX.trim() || !nameO.trim()) return;
 
-    setStatus("joining");
+    setStatus("starting");
     setError("");
     try {
-      const createdPlayer = await api.createOrJoinPlayer(username.trim());
-      setPlayer(createdPlayer);
-
-      const result = await api.joinQueue(createdPlayer.id, createdPlayer.username);
-      if (result.status === "matched") {
-        onMatched(createdPlayer, result.match);
-        return;
-      }
-
-      setStatus("waiting");
-      pollRef.current = setInterval(async () => {
-        const check = await api.queueStatus(createdPlayer.id);
-        if (check.status === "matched") {
-          clearInterval(pollRef.current);
-          onMatched(createdPlayer, check.match);
-        }
-      }, 1500);
+      // Register both local players with player-service so the leaderboard
+      // can track wins/losses/draws per username, same as before. This is a
+      // single one-off call each -- no continuous polling, no network
+      // dependency during actual gameplay.
+      const playerX = await api.createOrJoinPlayer(nameX.trim());
+      const playerO = await api.createOrJoinPlayer(nameO.trim());
+      onStart(playerX, playerO);
     } catch (err) {
       setError(err.message);
       setStatus("error");
     }
   };
 
-  const handleCancel = async () => {
-    clearInterval(pollRef.current);
-    if (player) await api.leaveQueue(player.id).catch(() => {});
-    setStatus("idle");
-  };
-
   return (
     <div className="w-full max-w-sm bg-white rounded-2xl shadow-md p-8 flex flex-col gap-5">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-slate-800">Tic-Tac-Toe Online</h1>
-        <p className="text-slate-500 text-sm mt-1">Pick a name and we'll find you an opponent.</p>
+        <h1 className="text-2xl font-bold text-slate-800">Tic-Tac-Toe</h1>
+        <p className="text-slate-500 text-sm mt-1">
+          Pass-and-play on this device. Enter both names to start.
+        </p>
       </div>
 
-      {status !== "waiting" ? (
-        <form onSubmit={handleJoin} className="flex flex-col gap-3">
+      <form onSubmit={handleStart} className="flex flex-col gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-brand mb-1">Player X</label>
           <input
             type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Your username"
+            value={nameX}
+            onChange={(e) => setNameX(e.target.value)}
+            placeholder="Player X's name"
             maxLength={20}
-            className="border border-slate-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
+            className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
           />
-          <button
-            type="submit"
-            disabled={status === "joining" || !username.trim()}
-            className="bg-brand hover:bg-brand-dark disabled:opacity-50 text-white font-semibold rounded-lg py-2 transition-colors"
-          >
-            {status === "joining" ? "Joining…" : "Find a match"}
-          </button>
-          {error && <p className="text-rose-600 text-sm text-center">{error}</p>}
-        </form>
-      ) : (
-        <div className="flex flex-col items-center gap-4 py-4">
-          <div className="h-10 w-10 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-600">Waiting for another player to join…</p>
-          <button
-            onClick={handleCancel}
-            className="text-sm text-slate-500 underline hover:text-slate-700"
-          >
-            Cancel
-          </button>
         </div>
-      )}
+
+        <div>
+          <label className="block text-xs font-semibold text-rose-500 mb-1">Player O</label>
+          <input
+            type="text"
+            value={nameO}
+            onChange={(e) => setNameO(e.target.value)}
+            placeholder="Player O's name"
+            maxLength={20}
+            className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={status === "starting" || !nameX.trim() || !nameO.trim()}
+          className="bg-brand hover:bg-brand-dark disabled:opacity-50 text-white font-semibold rounded-lg py-2 transition-colors mt-2"
+        >
+          {status === "starting" ? "Starting…" : "Start game"}
+        </button>
+        {error && <p className="text-rose-600 text-sm text-center">{error}</p>}
+      </form>
     </div>
   );
 }
