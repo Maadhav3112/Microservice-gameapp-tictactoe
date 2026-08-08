@@ -70,7 +70,7 @@ The cluster runs in **EKS Auto Mode**, which offloads node provisioning and life
 
 **Worker nodes:**
 
-![EKS Nodes](images/nodes.png.png)
+![EKS Nodes](images/nodes.png)
 
 **Node capacity allocation** (CPU, memory, pods, ephemeral storage):
 
