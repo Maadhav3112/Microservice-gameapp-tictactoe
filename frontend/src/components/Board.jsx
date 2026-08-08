@@ -30,7 +30,10 @@ export default function Board({ gameId, playerId, mySymbol, opponentName, onGame
     async function poll() {
       try {
         const g = await api.getGame(gameId);
-        if (!cancelled) setGame(g);
+        if (!cancelled) {
+          setGame(g);
+          setError("");
+        }
       } catch (e) {
         if (!cancelled) setError(e.message);
       }
