@@ -46,17 +46,17 @@ ArgoCD continuously watches the Git repository and reconciles the live cluster s
 
 **Applications dashboard:**
 
-![ArgoCD Applications Dashboard](images/argocd-dashboard.png)
+![ArgoCD Applications Dashboard](images/Argocd-dashboard.png)
 
 **Application resource tree** — shows the full dependency graph from Deployments → ReplicaSets → Pods, along with sync/health status and revision history per service:
 
-![ArgoCD Application Tree - Part 1](images/argocd-app-tree-1.png)
+![ArgoCD Application Tree - Part 1](images/tree-view.png.png)
 
-![ArgoCD Application Tree - Part 2](images/argocd-app-tree-2.png)
+![ArgoCD Application Tree - Part 2](images/tree-view-2.png)
 
 **Network view** — traces traffic flow from the ingress controller through each service to its backing pods:
 
-![ArgoCD Network View](images/argocd-network-view.png)
+![ArgoCD Pods and Services](images/pods-and-services.png)
 
 ---
 
@@ -66,27 +66,26 @@ The cluster runs in **EKS Auto Mode**, which offloads node provisioning and life
 
 **Cluster summary:**
 
-![EKS Cluster](images/eks-cluster.png)
+![EKS Cluster](images/cluster-dash.png)
 
 **Worker nodes:**
 
-![EKS Nodes](images/eks-nodes.png)
+![EKS Nodes](images/nodes.png.png)
 
 **Node capacity allocation** (CPU, memory, pods, ephemeral storage):
 
-![Node Capacity](images/eks-node-capacity.png)
+![Node Capacity](health-check.png)  
+
 
 **Pods scheduled on a worker node:**
 
-![Pods on Node](images/eks-pods-on-node.png)
+![Pods on Node](images/pods-inside-workernodes.png)
 
-**Cluster add-ons** — a `metrics-server` deployment provides resource metrics for autoscaling and observability:
-
-![Metrics Server Pods](images/eks-metrics-server-pods.png)
+![Pods on Node](images/pod-in-wn-2.png)
 
 **Namespaces** — workloads are isolated by namespace (`argocd`, `ingress-nginx`, and the application namespace, alongside the default system namespaces):
 
-![Namespaces](images/k8s-namespaces.png)
+![Namespaces](images/namespaces.png)
 
 ---
 
@@ -96,11 +95,11 @@ Day-to-day operations are performed from an EC2 admin/bastion host with `kubectl
 
 **Inspecting pods and services across namespaces:**
 
-![kubectl pods and services](images/k8s-cli-pods-services.png)
+![kubectl pods and services](images/k8s-server.png)
 
 **Rolling restarts and rollout status** — deployments can be restarted and their rollout progress tracked in real time, enabling zero-downtime updates and rollback if a release misbehaves:
 
-![Rollout restart and status](images/k8s-rollout-restart.png)
+![Rollout restart and status](images/rollback.png)
 
 ---
 
@@ -122,7 +121,7 @@ Access to the cluster and supporting AWS resources is controlled through dedicat
 
 Alongside the managed EKS worker nodes, an EC2 instance serves as the administration/bastion host used to run `kubectl` and manage the cluster.
 
-![EC2 Instances](images/ec2-instances.png)
+![EC2 Instances](images/instance.png)
 
 ---
 
@@ -130,9 +129,9 @@ Alongside the managed EKS worker nodes, an EC2 instance serves as the administra
 
 Each microservice is built into its own image and published to a private Docker Hub repository, tagged by version (`latest`, `v2`, `v2.1`, etc.) to support controlled rollouts and rollbacks.
 
-![Docker Hub Images 1](images/docker-images-1.png)
+![Docker Hub Images 1](images/docker-hub..png)
 
-![Docker Hub Images 2](images/docker-images-2.png)
+![Docker Hub Images 2](images/docker-hub-1.png)
 
 ---
 
@@ -142,11 +141,11 @@ Player statistics are persisted in a MySQL database hosted on Amazon RDS, decoup
 
 **Connecting to the RDS instance:**
 
-![MySQL Connection](images/mysql-connect.png)
+![MySQL Connection](db-1.png)
 
 **Player stats table:**
 
-![Player Stats Table](images/mysql-player-stats.png)
+![Player Stats Table](images/db,tables..png)
 
 ---
 
@@ -156,15 +155,15 @@ The end-to-end deployment serves a live, real-time web app with player matchmaki
 
 **Lobby and leaderboard:**
 
-![App Lobby and Leaderboard](images/app-lobby-leaderboard.png)
+![App Lobby and Leaderboard](images/app-1.png)
 
 **Live session:**
 
-![App Gameplay](images/app-gameplay.png)
+![App Gameplay](images/app-2.png)
 
 **Match result and updated leaderboard:**
 
-![App Result](images/app-result.png)
+![App Result](images/app-3.png)
 
 ---
 
