@@ -46,11 +46,11 @@ ArgoCD continuously watches the Git repository and reconciles the live cluster s
 
 **Applications dashboard:**
 
-![ArgoCD Applications Dashboard](images/Argocd-dashboard.png)
+![ArgoCD Applications Dashboard](images/Argocd-dashboard-app.png)
 
 **Application resource tree** — shows the full dependency graph from Deployments → ReplicaSets → Pods, along with sync/health status and revision history per service:
 
-![ArgoCD Application Tree - Part 1](images/tree-view.png.png)
+![ArgoCD Application Tree - Part 1](images/tree-view.png)
 
 ![ArgoCD Application Tree - Part 2](images/tree-view-2.png)
 
