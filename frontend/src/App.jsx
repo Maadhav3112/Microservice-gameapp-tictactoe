@@ -21,7 +21,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8 p-6">
+    <div className="min-h-screen w-full flex flex-col items-center gap-16 py-16 px-6">
       {!players ? (
         <Lobby onStart={handleStart} />
       ) : (

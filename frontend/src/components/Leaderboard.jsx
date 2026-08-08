@@ -23,21 +23,19 @@ export default function Leaderboard({ refreshKey }) {
   return (
     <div
       style={{
+        position: "relative",
+        zIndex: 2,
         width: "100%",
-        maxWidth: 440,
-        background: "rgba(20,16,32,0.65)",
-        backdropFilter: "blur(10px)",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: 22,
-        padding: 24,
-        boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
+        maxWidth: 720,
+        margin: "0 auto",
+        padding: "0 8px",
         fontFamily: "'Inter', sans-serif",
       }}
     >
       <h2
         style={{
           fontFamily: "'Orbitron', sans-serif",
-          fontSize: 15,
+          fontSize: 16,
           fontWeight: 800,
           margin: "0 0 18px",
           color: "#fff",
@@ -49,9 +47,7 @@ export default function Leaderboard({ refreshKey }) {
         🏆 LEADERBOARD
       </h2>
 
-      {error && (
-        <p style={{ color: "#FF5E5E", fontSize: 13 }}>{error}</p>
-      )}
+      {error && <p style={{ color: "#FF5E5E", fontSize: 13 }}>{error}</p>}
 
       {rows.length === 0 && !error ? (
         <p style={{ color: "#6b6685", fontSize: 13 }}>No games played yet — be the first!</p>
@@ -60,7 +56,7 @@ export default function Leaderboard({ refreshKey }) {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "28px 1fr 90px 60px",
+              gridTemplateColumns: "28px 1fr 110px 70px",
               fontSize: 10,
               letterSpacing: 1,
               textTransform: "uppercase",
@@ -80,20 +76,17 @@ export default function Leaderboard({ refreshKey }) {
               key={r.player_id}
               style={{
                 display: "grid",
-                gridTemplateColumns: "28px 1fr 90px 60px",
+                gridTemplateColumns: "28px 1fr 110px 70px",
                 alignItems: "center",
                 padding: "10px 10px",
                 borderRadius: 12,
-                background: i < 3 ? "rgba(255,255,255,0.04)" : "transparent",
-                border: i < 3 ? "1px solid rgba(255,255,255,0.08)" : "1px solid transparent",
+                borderBottom: "1px solid rgba(255,255,255,0.05)",
                 opacity: visible ? 1 : 0,
                 transform: visible ? "translateY(0)" : "translateY(8px)",
                 transition: `opacity .35s ease ${i * 0.04}s, transform .35s ease ${i * 0.04}s`,
               }}
             >
-              <span style={{ fontSize: 13, color: "#6b6685" }}>
-                {MEDALS[i] || i + 1}
-              </span>
+              <span style={{ fontSize: 13, color: "#6b6685" }}>{MEDALS[i] || i + 1}</span>
               <span
                 style={{
                   fontSize: 13,
@@ -118,7 +111,7 @@ export default function Leaderboard({ refreshKey }) {
                 <span style={{ fontSize: 12, color: "#D8D2EC" }}>{Math.round(r.win_rate * 100)}%</span>
                 <span
                   style={{
-                    width: 48,
+                    width: 56,
                     height: 4,
                     borderRadius: 4,
                     background: "rgba(255,255,255,0.08)",

@@ -7,7 +7,6 @@ export default function Lobby({ onStart }) {
   const [status, setStatus] = useState("idle"); // idle | starting | error
   const [error, setError] = useState("");
 
-  const stageRef = useRef(null);
   const canvasRef = useRef(null);
   const starsRef = useRef([]);
   const shootRef = useRef(null);
@@ -25,21 +24,20 @@ export default function Lobby({ onStart }) {
     }
   }, []);
 
-  // Starfield canvas animation
+  // Fullscreen starfield canvas animation
   useEffect(() => {
-    const stage = stageRef.current;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
     const resize = () => {
-      canvas.width = stage.clientWidth;
-      canvas.height = stage.clientHeight;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
     resize();
     window.addEventListener("resize", resize);
 
     if (starsRef.current.length === 0) {
-      starsRef.current = Array.from({ length: 120 }, () => ({
+      starsRef.current = Array.from({ length: 180 }, () => ({
         x: Math.random(),
         y: Math.random(),
         r: Math.random() * 1.4 + 0.3,
@@ -49,7 +47,7 @@ export default function Lobby({ onStart }) {
     }
 
     const maybeShoot = () => {
-      if (!shootRef.current && Math.random() < 0.01) {
+      if (!shootRef.current && Math.random() < 0.008) {
         shootRef.current = {
           x: Math.random() * canvas.width * 0.6,
           y: Math.random() * canvas.height * 0.3,
@@ -123,23 +121,11 @@ export default function Lobby({ onStart }) {
   };
 
   return (
-    <div
-      ref={stageRef}
-      style={{
-        position: "relative",
-        width: "100%",
-        maxWidth: 440,
-        minHeight: 480,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: 26,
-        overflow: "hidden",
-        background: "radial-gradient(ellipse at 50% 30%, #1a0f2e 0%, #050508 70%)",
-        fontFamily: "'Inter', sans-serif",
-      }}
-    >
-      <canvas ref={canvasRef} style={{ position: "absolute", inset: 0 }} />
+    <>
+      <canvas
+        ref={canvasRef}
+        style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}
+      />
 
       <div
         style={{
@@ -147,13 +133,14 @@ export default function Lobby({ onStart }) {
           zIndex: 2,
           width: "100%",
           maxWidth: 340,
-          margin: "32px 16px",
+          margin: "0 auto",
           background: "rgba(15,10,26,0.55)",
           backdropFilter: "blur(10px)",
           border: "1px solid rgba(255,255,255,0.1)",
           borderRadius: 22,
           padding: 26,
           boxShadow: "0 0 80px rgba(138,127,255,0.15)",
+          fontFamily: "'Inter', sans-serif",
         }}
       >
         <h1
@@ -303,6 +290,6 @@ export default function Lobby({ onStart }) {
       <style>{`
         @keyframes hue { to { background-position: 300% 0; } }
       `}</style>
-    </div>
+    </>
   );
 }
