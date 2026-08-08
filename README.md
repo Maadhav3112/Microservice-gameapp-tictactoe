@@ -178,12 +178,5 @@ The end-to-end deployment serves a live, real-time web app with player matchmaki
 
 ---
 
-## Repository Structure
-
-```
-.
-├── README.md
-└── images/          # Screenshots referenced in this README
-```
 
 > Note: This README documents the deployed system based on cluster/dashboard screenshots. Add your Kubernetes manifests, ArgoCD `Application` definitions, and CI/CD pipeline config alongside this README as the source of truth for the GitOps workflow.
