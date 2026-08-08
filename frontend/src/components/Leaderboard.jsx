@@ -1,50 +1,144 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 
+const MEDALS = ["🥇", "🥈", "🥉"];
+
 export default function Leaderboard({ refreshKey }) {
   const [rows, setRows] = useState([]);
   const [error, setError] = useState("");
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    setVisible(false);
     api
       .leaderboard()
-      .then(setRows)
+      .then((data) => {
+        setRows(data);
+        setError("");
+        requestAnimationFrame(() => setVisible(true));
+      })
       .catch((e) => setError(e.message));
   }, [refreshKey]);
 
   return (
-    <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-6">
-      <h2 className="text-lg font-bold text-slate-800 mb-4">🏆 Leaderboard</h2>
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 440,
+        background: "rgba(20,16,32,0.65)",
+        backdropFilter: "blur(10px)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 22,
+        padding: 24,
+        boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <h2
+        style={{
+          fontFamily: "'Orbitron', sans-serif",
+          fontSize: 15,
+          fontWeight: 800,
+          margin: "0 0 18px",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        🏆 LEADERBOARD
+      </h2>
 
-      {error && <p className="text-rose-600 text-sm">{error}</p>}
+      {error && (
+        <p style={{ color: "#FF5E5E", fontSize: 13 }}>{error}</p>
+      )}
 
       {rows.length === 0 && !error ? (
-        <p className="text-slate-400 text-sm">No games played yet — be the first!</p>
+        <p style={{ color: "#6b6685", fontSize: 13 }}>No games played yet — be the first!</p>
       ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-slate-400 border-b border-slate-100">
-              <th className="py-2">#</th>
-              <th className="py-2">Player</th>
-              <th className="py-2 text-center">W</th>
-              <th className="py-2 text-center">L</th>
-              <th className="py-2 text-center">D</th>
-              <th className="py-2 text-right">Win %</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={r.player_id} className="border-b border-slate-50">
-                <td className="py-2 text-slate-400">{i + 1}</td>
-                <td className="py-2 font-medium text-slate-700">{r.username}</td>
-                <td className="py-2 text-center text-emerald-600">{r.wins}</td>
-                <td className="py-2 text-center text-rose-500">{r.losses}</td>
-                <td className="py-2 text-center text-amber-500">{r.draws}</td>
-                <td className="py-2 text-right text-slate-500">{Math.round(r.win_rate * 100)}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "28px 1fr 90px 60px",
+              fontSize: 10,
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              color: "#6b6685",
+              padding: "0 10px 8px",
+              borderBottom: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <span>#</span>
+            <span>Player</span>
+            <span style={{ textAlign: "center" }}>W / L / D</span>
+            <span style={{ textAlign: "right" }}>Win %</span>
+          </div>
+
+          {rows.map((r, i) => (
+            <div
+              key={r.player_id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "28px 1fr 90px 60px",
+                alignItems: "center",
+                padding: "10px 10px",
+                borderRadius: 12,
+                background: i < 3 ? "rgba(255,255,255,0.04)" : "transparent",
+                border: i < 3 ? "1px solid rgba(255,255,255,0.08)" : "1px solid transparent",
+                opacity: visible ? 1 : 0,
+                transform: visible ? "translateY(0)" : "translateY(8px)",
+                transition: `opacity .35s ease ${i * 0.04}s, transform .35s ease ${i * 0.04}s`,
+              }}
+            >
+              <span style={{ fontSize: 13, color: "#6b6685" }}>
+                {MEDALS[i] || i + 1}
+              </span>
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#fff",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  paddingRight: 8,
+                }}
+              >
+                {r.username}
+              </span>
+              <span style={{ fontSize: 12, textAlign: "center", whiteSpace: "nowrap" }}>
+                <span style={{ color: "#8CE85E" }}>{r.wins}</span>
+                {" / "}
+                <span style={{ color: "#FF5E5E" }}>{r.losses}</span>
+                {" / "}
+                <span style={{ color: "#FFD23F" }}>{r.draws}</span>
+              </span>
+              <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                <span style={{ fontSize: 12, color: "#D8D2EC" }}>{Math.round(r.win_rate * 100)}%</span>
+                <span
+                  style={{
+                    width: 48,
+                    height: 4,
+                    borderRadius: 4,
+                    background: "rgba(255,255,255,0.08)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "block",
+                      height: "100%",
+                      width: visible ? `${Math.round(r.win_rate * 100)}%` : "0%",
+                      background: "linear-gradient(90deg,#5EEBD8,#8A7FFF,#FF7EB6)",
+                      transition: `width .6s ease ${i * 0.04 + 0.1}s`,
+                    }}
+                  />
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
