@@ -129,7 +129,7 @@ Alongside the managed EKS worker nodes, an EC2 instance serves as the administra
 
 Each microservice is built into its own image and published to a private Docker Hub repository, tagged by version (`latest`, `v2`, `v2.1`, etc.) to support controlled rollouts and rollbacks.
 
-![Docker Hub Images 1](images/docker-hub..png)
+![Docker Hub Images 1](images/docker-hub.png)
 
 ![Docker Hub Images 2](images/docker-hub-1.png)
 
