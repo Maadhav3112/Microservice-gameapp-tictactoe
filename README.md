@@ -74,7 +74,7 @@ The cluster runs in **EKS Auto Mode**, which offloads node provisioning and life
 
 **Node capacity allocation** (CPU, memory, pods, ephemeral storage):
 
-![Node Capacity](health-check.png)  
+![Node Capacity](images/health-check.png)  
 
 
 **Pods scheduled on a worker node:**
