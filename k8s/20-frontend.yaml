@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: raiden004/tictactoe-frontend:latest
+          image: raiden004/tictactoe-frontend:v2
           ports:
             - containerPort: 80
           readinessProbe:

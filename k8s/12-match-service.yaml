@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: match-service
-          image: raiden004/tictactoe-match-service:latest
+          image: raiden004/tictactoe-match-service:v2
           ports:
             - containerPort: 5000
           env:

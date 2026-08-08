@@ -2,6 +2,7 @@ import { useState } from "react";
 import Lobby from "./components/Lobby.jsx";
 import Board from "./components/Board.jsx";
 import Leaderboard from "./components/Leaderboard.jsx";
+import { api } from "./api.js";
 
 export default function App() {
   const [player, setPlayer] = useState(null);
@@ -19,6 +20,15 @@ export default function App() {
   };
 
   const handlePlayAgain = () => {
+    // Tell the backend we're done with this match too, not just the UI —
+    // otherwise match-service keeps handing this player_id the same old
+    // match forever the next time they try to queue up.
+    if (player) {
+      api.leaveQueue(player.id).catch(() => {
+        // Best-effort: even if this fails, still let the player go back
+        // to the lobby locally rather than getting stuck.
+      });
+    }
     setMatch(null);
   };
 

@@ -98,6 +98,20 @@ def leave_queue():
     player_id = data.get("player_id")
     global QUEUE
     QUEUE = [p for p in QUEUE if p["player_id"] != player_id]
+
+    # Also forget any match this player was previously in, so rejoining
+    # the queue later (even with the same player_id) starts a genuinely
+    # fresh match instead of being handed back a stale/old one.
+    match_id = PLAYER_MATCH_INDEX.pop(player_id, None)
+    if match_id and match_id in MATCHES:
+        match = MATCHES[match_id]
+        other_players = [p["player_id"] for p in match["players"] if p["player_id"] != player_id]
+        # Only fully discard the match once BOTH players have left, so the
+        # other player's in-game state/polling isn't yanked out from under them.
+        still_active = any(pid in PLAYER_MATCH_INDEX for pid in other_players)
+        if not still_active:
+            MATCHES.pop(match_id, None)
+
     return jsonify(status="left"), 200
 
 
