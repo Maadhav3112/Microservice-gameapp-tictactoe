@@ -25,11 +25,11 @@ export default function App() {
       {!players ? (
         <Lobby onStart={handleStart} />
       ) : (
-        <div className="w-full max-w-sm bg-white rounded-2xl shadow-md p-8 flex flex-col items-center gap-6">
+        <div className="w-full max-w-sm flex flex-col items-center gap-6">
           <Board playerX={players.x} playerO={players.o} onGameOver={handleGameOver} />
           <button
             onClick={handleBackToLobby}
-            className="text-sm text-slate-500 underline hover:text-slate-700"
+            className="text-sm text-slate-400 underline hover:text-slate-200"
           >
             Back to lobby
           </button>
