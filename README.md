@@ -141,11 +141,11 @@ Player statistics are persisted in a MySQL database hosted on Amazon RDS, decoup
 
 **Connecting to the RDS instance:**
 
-![MySQL Connection](db-1.png)
+![MySQL Connection](images/db-1.png)
 
 **Player stats table:**
 
-![Player Stats Table](images/db,tables..png)
+![Player Stats Table](images/db,tables.png)
 
 ---
 
